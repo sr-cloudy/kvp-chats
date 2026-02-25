@@ -1,31 +1,70 @@
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
 
-# 1. SETUP: This is your password/security
-SECRET_PASSWORD = "kvp@1842Chats" 
+# --- CONFIG ---
+st.set_page_config(page_title="Private Secure Chat", page_icon="🔒")
 
-st.title("🔒 My Private Chat")
+# Create connection to Google Sheets
+# You will add your Sheet URL in the Streamlit Dashboard "Secrets" later
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-# Simple Login
-password = st.sidebar.text_input("Enter Password", type="password")
+# --- LOGIN LOGIC ---
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.user_email = ""
 
-if password == SECRET_PASSWORD:
-    st.success("Welcome, Admin!")
+def login():
+    # Read the Users tab from your sheet
+    users_df = conn.read(worksheet="Users")
     
-    # Initialize chat history in a simple way
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    st.title("Login to Private Chat")
+    email = st.text_input("Email")
+    pwd = st.text_input("Password", type="password")
+    
+    if st.button("Login"):
+        # Check if email and password match any row in the Users tab
+        user_match = users_df[(users_df['email'] == email) & (users_df['password'].astype(str) == str(pwd))]
+        
+        if not user_match.empty:
+            st.session_state.logged_in = True
+            st.session_state.user_email = email
+            st.session_state.user_name = user_match.iloc[0]['name']
+            st.rerun()
+        else:
+            st.error("Invalid Email or Password. Ask the Admin to add you.")
 
-    # Display chat
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-
-    # Chat Input with Emoji support
-    if prompt := st.chat_input("Type your message (emojis welcome! 😊)"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+# --- CHAT INTERFACE ---
+if not st.session_state.logged_in:
+    login()
 else:
-    st.warning("Please enter the correct password to chat.")
+    st.sidebar.write(f"Logged in as: **{st.session_state.user_name}**")
+    if st.sidebar.button("Logout"):
+        st.session_state.logged_in = False
+        st.rerun()
+
+    st.title(f"Welcome, {st.session_state.user_name}! 👋")
+
+    # 1. Read existing chat history from Sheet
+    chat_df = conn.read(worksheet="ChatHistory")
+
+    # 2. Display existing messages
+    for idx, row in chat_df.iterrows():
+        with st.chat_message("user" if row['sender'] == st.session_state.user_email else "assistant"):
+            st.write(f"**{row['sender']}**: {row['message']}")
+
+    # 3. Chat Input
+    if prompt := st.chat_input("Write a message..."):
+        # Append to the Google Sheet
+        new_row = pd.DataFrame([{
+            "sender": st.session_state.user_email,
+            "message": prompt,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }])
+        
+        # Update the sheet
+        updated_df = pd.concat([chat_df, new_row], ignore_index=True)
+        conn.update(worksheet="ChatHistory", data=updated_df)
+        
+        st.rerun() # Refresh to show new message
