@@ -68,12 +68,22 @@ def chat():
 
     st.subheader(f"Conversation with {other_users[selected_recipient]}")
 
+    # Fixed: fetch sent and received separately instead of using .or_()
     try:
-        result = supabase.table("messages").select("*").or_(
-            f"and(sender.eq.{st.session_state.user_email},recipient.eq.{selected_recipient}),"
-            f"and(sender.eq.{selected_recipient},recipient.eq.{st.session_state.user_email})"
-        ).order("created_at", desc=False).execute()
-        messages = result.data
+        sent = supabase.table("messages").select("*") \
+            .eq("sender", st.session_state.user_email) \
+            .eq("recipient", selected_recipient) \
+            .execute()
+
+        received = supabase.table("messages").select("*") \
+            .eq("sender", selected_recipient) \
+            .eq("recipient", st.session_state.user_email) \
+            .execute()
+
+        messages = sorted(
+            sent.data + received.data,
+            key=lambda x: x["created_at"]
+        )
     except Exception as e:
         st.error(f"Error loading messages: {e}")
         messages = []
