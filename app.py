@@ -19,55 +19,57 @@ GLOBAL_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-/* ─── RESET & BASE ─── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; }
 
-html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+html, body,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+.main {
     background: #0d0d0d !important;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'DM Sans', sans-serif !important;
     color: #f0f0f0 !important;
 }
 
-[data-testid="stHeader"] { display: none !important; }
+/* ── Hide Streamlit chrome but KEEP the sidebar toggle button ── */
+[data-testid="stHeader"] { background: transparent !important; }
 [data-testid="stToolbar"] { display: none !important; }
+[data-testid="stDecoration"] { display: none !important; }
 #MainMenu { display: none !important; }
 footer { display: none !important; }
 
-/* ─── HIDE STREAMLIT DECORATION ─── */
-[data-testid="stDecoration"] { display: none; }
-
-/* ─── SIDEBAR ─── */
-section[data-testid="stSidebar"] {
-    background: #111111 !important;
-    border-right: 1px solid #222 !important;
-    width: 280px !important;
+/* Keep the sidebar collapse/expand button visible and style it */
+[data-testid="stSidebarCollapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    background: #1a1a1a !important;
+    border: 1px solid #2a2a2a !important;
+    border-radius: 8px !important;
+    color: #f0f0f0 !important;
+    z-index: 99999 !important;
 }
 
-section[data-testid="stSidebar"] * {
+[data-testid="stSidebarCollapsedControl"] svg {
+    fill: #f0f0f0 !important;
     color: #f0f0f0 !important;
 }
 
-section[data-testid="stSidebar"] .stSelectbox label {
-    color: #888 !important;
-    font-size: 0.75rem !important;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+/* ── SIDEBAR ── */
+section[data-testid="stSidebar"] {
+    background: #111111 !important;
+    border-right: 1px solid #1e1e1e !important;
 }
-
+section[data-testid="stSidebar"] * { color: #f0f0f0 !important; }
 section[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
     background: #1a1a1a !important;
     border: 1px solid #2a2a2a !important;
     border-radius: 10px !important;
-    color: #f0f0f0 !important;
 }
-
-/* Selectbox dropdown options */
 [data-baseweb="select"] * { color: #f0f0f0 !important; background: #1a1a1a !important; }
-[data-baseweb="popover"] { background: #1a1a1a !important; }
+[data-baseweb="popover"] { background: #1a1a1a !important; border: 1px solid #2a2a2a !important; }
 [role="option"] { background: #1a1a1a !important; color: #f0f0f0 !important; }
 [role="option"]:hover { background: #252525 !important; }
 
-/* ─── BUTTONS ─── */
+/* ── BUTTONS ── */
 div.stButton > button {
     background: #f0f0f0 !important;
     color: #0d0d0d !important;
@@ -79,36 +81,20 @@ div.stButton > button {
     padding: 0.6rem 1.2rem !important;
     width: 100% !important;
     transition: all 0.2s ease !important;
-    letter-spacing: 0.3px;
 }
-
 div.stButton > button:hover {
     background: #d4d4d4 !important;
     transform: translateY(-1px);
 }
 
-/* Logout button special style */
-div.stButton > button[kind="secondary"] {
-    background: transparent !important;
-    color: #666 !important;
-    border: 1px solid #2a2a2a !important;
-}
-
-div.stButton > button[kind="secondary"]:hover {
-    background: #1a1a1a !important;
-    color: #f0f0f0 !important;
-}
-
-/* ─── TEXT INPUTS ─── */
+/* ── TEXT INPUTS ── */
 .stTextInput > label {
-    color: #888 !important;
-    font-size: 0.75rem !important;
+    color: #666 !important;
+    font-size: 0.72rem !important;
     font-weight: 500 !important;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 4px !important;
 }
-
 .stTextInput > div > div > input {
     background: #1a1a1a !important;
     color: #f0f0f0 !important;
@@ -118,27 +104,20 @@ div.stButton > button[kind="secondary"]:hover {
     font-family: 'DM Sans', sans-serif !important;
     font-size: 0.95rem !important;
     caret-color: #f0f0f0 !important;
-    transition: border-color 0.2s;
 }
-
 .stTextInput > div > div > input:focus {
-    border-color: #555 !important;
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.05) !important;
+    border-color: #444 !important;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.04) !important;
     outline: none !important;
 }
+.stTextInput > div > div > input::placeholder { color: #3a3a3a !important; }
 
-.stTextInput > div > div > input::placeholder {
-    color: #444 !important;
-}
-
-/* ─── CHAT INPUT ─── */
+/* ── CHAT INPUT ── */
 [data-testid="stChatInput"] {
     background: #1a1a1a !important;
     border: 1px solid #2a2a2a !important;
     border-radius: 14px !important;
-    padding: 0.5rem 1rem !important;
 }
-
 [data-testid="stChatInput"] textarea {
     background: transparent !important;
     color: #f0f0f0 !important;
@@ -146,185 +125,65 @@ div.stButton > button[kind="secondary"]:hover {
     font-size: 0.95rem !important;
     caret-color: #f0f0f0 !important;
 }
-
-[data-testid="stChatInput"] textarea::placeholder {
-    color: #444 !important;
-}
-
+[data-testid="stChatInput"] textarea::placeholder { color: #3a3a3a !important; }
 [data-testid="stChatInput"] button {
     background: #f0f0f0 !important;
     border-radius: 8px !important;
     color: #0d0d0d !important;
 }
 
-/* ─── CHAT MESSAGES ─── */
+/* ── STICKY BOTTOM INPUT AREA ── */
+[data-testid="stBottom"] {
+    background: #0d0d0d !important;
+    border-top: 1px solid #1a1a1a !important;
+    padding: 0.8rem 1rem !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 9998 !important;
+}
+
+/* ── CHAT MESSAGES ── */
 [data-testid="stChatMessage"] {
     background: transparent !important;
     border: none !important;
-    padding: 0.4rem 0 !important;
+    padding: 0.3rem 0 !important;
 }
-
-/* User message bubble */
-[data-testid="stChatMessage"][data-testid*="user"] {
-    background: transparent !important;
-}
-
 .stChatMessage p {
     color: #f0f0f0 !important;
     font-size: 0.95rem !important;
     line-height: 1.6 !important;
 }
-
-/* Avatar icons fix for dark mode */
 [data-testid="stChatMessageAvatar"] {
     background: #1e1e1e !important;
     border: 1px solid #2a2a2a !important;
     border-radius: 50% !important;
 }
 
-/* ─── SCROLLABLE CHAT AREA ─── */
-.chat-scroll-area {
-    height: calc(100vh - 220px);
-    overflow-y: auto;
-    padding: 1rem 0;
-    padding-bottom: 1rem;
-    scroll-behavior: smooth;
-}
-
-.chat-scroll-area::-webkit-scrollbar { width: 4px; }
-.chat-scroll-area::-webkit-scrollbar-track { background: transparent; }
-.chat-scroll-area::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
-
-/* ─── STICKY INPUT CONTAINER ─── */
-.input-sticky {
+/* ── FIXED TOPBAR ── */
+.kvp-topbar {
     position: fixed;
-    bottom: 0;
-    left: 280px;
+    top: 0;
     right: 0;
+    left: 0;
+    height: 64px;
     background: #0d0d0d;
-    border-top: 1px solid #1a1a1a;
-    padding: 1rem 2rem;
-    z-index: 999;
-}
-
-/* ─── MARKDOWN & TEXT ─── */
-.stMarkdown p, .stMarkdown div, p, span, label {
-    color: #f0f0f0 !important;
-}
-
-h1, h2, h3 {
-    font-family: 'Syne', sans-serif !important;
-    color: #f0f0f0 !important;
-}
-
-/* ─── WARNINGS / ERRORS / INFO ─── */
-[data-testid="stAlert"] {
-    background: #1a1a1a !important;
-    border: 1px solid #2a2a2a !important;
-    color: #f0f0f0 !important;
-    border-radius: 10px !important;
-}
-
-/* ─── SPINNER ─── */
-[data-testid="stSpinner"] { color: #f0f0f0 !important; }
-
-/* ─── LOGIN PAGE ─── */
-.login-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-}
-
-.login-card {
-    background: #111;
-    border: 1px solid #1e1e1e;
-    border-radius: 20px;
-    padding: 3rem 2.5rem;
-    width: 100%;
-    max-width: 420px;
-}
-
-.login-logo {
-    font-family: 'Syne', sans-serif;
-    font-size: 2.8rem;
-    font-weight: 800;
-    color: #f0f0f0;
-    text-align: center;
-    letter-spacing: -1px;
-    margin-bottom: 0.3rem;
-}
-
-.login-tagline {
-    text-align: center;
-    color: #555;
-    font-size: 0.85rem;
-    margin-bottom: 2.5rem;
-    letter-spacing: 0.5px;
-}
-
-/* ─── SIDEBAR COMPONENTS ─── */
-.sidebar-profile {
-    padding: 1.5rem 1rem 1rem;
-    border-bottom: 1px solid #1e1e1e;
-    margin-bottom: 1.2rem;
-}
-
-.profile-avatar {
-    width: 48px;
-    height: 48px;
-    background: #f0f0f0;
-    color: #0d0d0d;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 1.2rem;
-    margin-bottom: 0.8rem;
-}
-
-.profile-name {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    color: #f0f0f0;
-}
-
-.profile-status {
-    font-size: 0.75rem;
-    color: #4ade80;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 2px;
-}
-
-.status-dot {
-    width: 6px;
-    height: 6px;
-    background: #4ade80;
-    border-radius: 50%;
-    box-shadow: 0 0 6px #4ade80;
-    display: inline-block;
-}
-
-/* ─── CHAT HEADER ─── */
-.chat-topbar {
+    border-bottom: 1px solid #1a1a1a;
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 1.2rem 2rem;
-    border-bottom: 1px solid #1a1a1a;
-    background: #0d0d0d;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    padding: 0 1.5rem 0 4rem; /* left padding to avoid overlap with sidebar toggle */
+    z-index: 9997;
 }
 
-.chat-avatar {
+/* On wider screens push topbar past the sidebar */
+@media (min-width: 768px) {
+    .kvp-topbar {
+        left: 0;
+        padding-left: 2rem;
+    }
+}
+
+.kvp-topbar .chat-avatar {
     width: 40px;
     height: 40px;
     background: #1e1e1e;
@@ -339,62 +198,109 @@ h1, h2, h3 {
     color: #f0f0f0;
     flex-shrink: 0;
 }
-
-.chat-recipient-name {
+.kvp-topbar .rname {
     font-family: 'Syne', sans-serif;
     font-weight: 700;
     font-size: 1rem;
     color: #f0f0f0;
+    line-height: 1.2;
 }
-
-.chat-recipient-status {
-    font-size: 0.75rem;
+.kvp-topbar .rstatus {
+    font-size: 0.72rem;
     color: #4ade80;
 }
 
-/* ─── EMPTY STATE ─── */
-.empty-state {
+/* Push main content below topbar */
+[data-testid="stMain"] .block-container {
+    padding-top: 80px !important;
+    padding-bottom: 20px !important;
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+    max-width: 100% !important;
+}
+
+/* ── MISC TEXT ── */
+hr { border-color: #1e1e1e !important; }
+.stMarkdown p, p, span, label { color: #f0f0f0 !important; }
+h1, h2, h3 { font-family: 'Syne', sans-serif !important; color: #f0f0f0 !important; }
+[data-testid="stAlert"] {
+    background: #1a1a1a !important;
+    border: 1px solid #2a2a2a !important;
+    color: #f0f0f0 !important;
+    border-radius: 10px !important;
+}
+
+/* ── SIDEBAR PROFILE ── */
+.sidebar-profile {
+    padding: 1.5rem 1rem 1rem;
+    border-bottom: 1px solid #1e1e1e;
+    margin-bottom: 1rem;
+}
+.profile-avatar {
+    width: 46px;
+    height: 46px;
+    background: #f0f0f0;
+    color: #0d0d0d;
+    border-radius: 50%;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 50vh;
-    color: #333;
-    gap: 1rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    margin-bottom: 0.6rem;
 }
-
-.empty-state-icon {
-    font-size: 3rem;
-    opacity: 0.4;
+.profile-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #f0f0f0;
 }
-
-.empty-state-text {
-    font-size: 0.9rem;
-    color: #444 !important;
-    text-align: center;
+.profile-status { font-size: 0.72rem; color: #4ade80; margin-top: 2px; }
+.status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #4ade80;
+    margin-right: 4px;
+    vertical-align: middle;
 }
-
-/* ─── DIVIDER ─── */
-hr { border-color: #1e1e1e !important; }
-
-/* ─── COLUMNS FIX ─── */
-[data-testid="column"] { padding: 0 !important; }
-
-/* ─── MAIN CONTENT PADDING ─── */
-.main-content {
-    padding: 0 2rem;
-    padding-bottom: 100px;
-}
-
-/* Section label in sidebar */
 .section-label {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: #444 !important;
     padding: 0 1rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
+    display: block;
 }
+
+/* ── LOGIN ── */
+.login-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: #f0f0f0;
+    text-align: center;
+    letter-spacing: -1px;
+    margin-bottom: 0.25rem;
+}
+.login-tagline {
+    text-align: center;
+    color: #444 !important;
+    font-size: 0.78rem;
+    letter-spacing: 2px;
+    margin-bottom: 2.5rem;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+}
+.empty-state-icon { font-size: 3rem; opacity: 0.3; }
+.empty-state-text { font-size: 0.88rem; color: #444 !important; margin-top: 1rem; }
 </style>
 """
 
@@ -402,35 +308,31 @@ hr { border-color: #1e1e1e !important; }
 def login():
     st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 1.5, 1])
+    col1, col2, col3 = st.columns([1, 1.4, 1])
     with col2:
-        st.markdown("<div style='height: 80px'></div>", unsafe_allow_html=True)
-
-        st.markdown("""
-            <div class="login-logo">💬 KVP</div>
-            <div class="login-tagline">PRIVATE · SECURE · SIMPLE</div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:80px'></div>", unsafe_allow_html=True)
+        st.markdown('<div class="login-logo">💬 KVP</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-tagline">PRIVATE · SECURE · SIMPLE</div>', unsafe_allow_html=True)
 
         email = st.text_input("Email", placeholder="you@example.com", key="login_email")
-        pwd = st.text_input("Password", placeholder="••••••••", type="password", key="login_pwd")
+        pwd   = st.text_input("Password", placeholder="••••••••", type="password", key="login_pwd")
 
-        st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
         if st.button("Sign In →", key="login_btn"):
             if not email or not pwd:
                 st.warning("Please fill in both fields.")
                 return
-            with st.spinner("Authenticating..."):
+            with st.spinner("Signing in..."):
                 time.sleep(0.4)
                 try:
-                    result = supabase.table("users").select("*").eq("email", email).eq("password", pwd).execute()
-                    if result.data:
-                        user = result.data[0]
-                        st.session_state.logged_in = True
+                    res = supabase.table("users").select("*") \
+                        .eq("email", email).eq("password", pwd).execute()
+                    if res.data:
+                        u = res.data[0]
+                        st.session_state.logged_in  = True
                         st.session_state.user_email = email
-                        st.session_state.user_name = user["name"]
+                        st.session_state.user_name  = u["name"]
                         st.rerun()
                     else:
                         st.error("Wrong email or password.")
@@ -443,31 +345,30 @@ def chat():
 
     # Load other users
     try:
-        users_result = supabase.table("users").select("email, name") \
+        res = supabase.table("users").select("email, name") \
             .neq("email", st.session_state.user_email).execute()
-        other_users = {u["email"]: u["name"] for u in users_result.data}
+        other_users = {u["email"]: u["name"] for u in res.data}
     except Exception:
         other_users = {}
 
-    initials_me = st.session_state.user_name[0].upper()
+    me_initial = st.session_state.user_name[0].upper()
 
     # ── SIDEBAR ──
     with st.sidebar:
         st.markdown(f"""
             <div class="sidebar-profile">
-                <div class="profile-avatar">{initials_me}</div>
+                <div class="profile-avatar">{me_initial}</div>
                 <div class="profile-name">{st.session_state.user_name}</div>
                 <div class="profile-status">
-                    <span class="status-dot"></span> Online
+                    <span class="status-dot"></span>Online
                 </div>
             </div>
+            <span class="section-label">Conversations</span>
         """, unsafe_allow_html=True)
 
-        st.markdown('<div class="section-label">Conversations</div>', unsafe_allow_html=True)
-
+        selected_recipient = None
         if not other_users:
             st.warning("No other users found.")
-            selected_recipient = None
         else:
             selected_recipient = st.selectbox(
                 "chat_with",
@@ -476,39 +377,40 @@ def chat():
                 label_visibility="collapsed"
             )
 
-        st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
         if st.button("Sign Out", key="logout_btn"):
-            st.session_state.logged_in = False
+            st.session_state.logged_in  = False
             st.session_state.user_email = ""
-            st.session_state.user_name = ""
+            st.session_state.user_name  = ""
             st.rerun()
 
-    # ── MAIN CHAT AREA ──
+    # ── NO RECIPIENT ──
     if not selected_recipient:
         st.markdown("""
             <div class="empty-state">
                 <div class="empty-state-icon">💬</div>
-                <div class="empty-state-text">Select someone to chat with</div>
+                <div class="empty-state-text">Select someone to start chatting</div>
             </div>
         """, unsafe_allow_html=True)
         return
 
     recipient_name = other_users[selected_recipient]
-    initials_them = recipient_name[0].upper()
+    them_initial   = recipient_name[0].upper()
 
-    # Chat topbar
+    # ── FIXED TOPBAR ──
+    # Injected as HTML with position:fixed so it never scrolls away
     st.markdown(f"""
-        <div class="chat-topbar">
-            <div class="chat-avatar">{initials_them}</div>
+        <div class="kvp-topbar">
+            <div class="chat-avatar">{them_initial}</div>
             <div>
-                <div class="chat-recipient-name">{recipient_name}</div>
-                <div class="chat-recipient-status">● Active now</div>
+                <div class="rname">{recipient_name}</div>
+                <div class="rstatus">● Active now</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    # Load messages
+    # ── LOAD MESSAGES ──
     try:
         sent = supabase.table("messages").select("*") \
             .eq("sender", st.session_state.user_email) \
@@ -526,41 +428,35 @@ def chat():
         st.error(f"Error loading messages: {e}")
         messages = []
 
-    # Message display
-    st.markdown('<div class="main-content">', unsafe_allow_html=True)
-    st.markdown("<div style='height: 16px'></div>", unsafe_allow_html=True)
-
+    # ── DISPLAY MESSAGES ──
     if not messages:
         st.markdown(f"""
             <div class="empty-state">
                 <div class="empty-state-icon">👋</div>
                 <div class="empty-state-text">
-                    No messages yet.<br>Start the conversation with {recipient_name}!
+                    No messages yet — say hello to {recipient_name}!
                 </div>
             </div>
         """, unsafe_allow_html=True)
     else:
         for msg in messages:
-            is_me = msg["sender"] == st.session_state.user_email
-            role = "user" if is_me else "assistant"
+            role = "user" if msg["sender"] == st.session_state.user_email else "assistant"
             with st.chat_message(role):
                 st.write(msg["message"])
 
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Chat input
+    # ── SEND MESSAGE ──
     if prompt := st.chat_input(f"Message {recipient_name}..."):
         try:
             supabase.table("messages").insert({
-                "sender": st.session_state.user_email,
+                "sender":    st.session_state.user_email,
                 "recipient": selected_recipient,
-                "message": prompt
+                "message":   prompt
             }).execute()
             st.rerun()
         except Exception as e:
             st.error(f"Failed to send: {e}")
 
-    # Auto refresh
+    # Auto-refresh every 3 s for incoming messages
     time.sleep(3)
     st.rerun()
 
