@@ -1,2 +1,3 @@
-supabase
-streamlit-gsheets
+supabase==2.3.0
+gotrue==2.1.0
+httpx==0.24.1
