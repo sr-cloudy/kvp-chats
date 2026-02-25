@@ -1,6 +1,6 @@
 import streamlit as st
 from supabase import create_client
-from datetime import datetime
+import time
 
 st.set_page_config(page_title="Private Secure Chat", page_icon="🔒")
 
@@ -68,7 +68,7 @@ def chat():
 
     st.subheader(f"Conversation with {other_users[selected_recipient]}")
 
-    # Fixed: fetch sent and received separately instead of using .or_()
+    # Load messages
     try:
         sent = supabase.table("messages").select("*") \
             .eq("sender", st.session_state.user_email) \
@@ -88,15 +88,19 @@ def chat():
         st.error(f"Error loading messages: {e}")
         messages = []
 
-    if not messages:
-        st.info("No messages yet. Say hello! 👋")
-    else:
-        for msg in messages:
-            role = "user" if msg["sender"] == st.session_state.user_email else "assistant"
-            with st.chat_message(role):
-                st.write(msg["message"])
-                st.caption(f"{msg['sender']} • {msg['created_at'][:16]}")
+    # Display messages
+    chat_container = st.container()
+    with chat_container:
+        if not messages:
+            st.info("No messages yet. Say hello! 👋")
+        else:
+            for msg in messages:
+                role = "user" if msg["sender"] == st.session_state.user_email else "assistant"
+                with st.chat_message(role):
+                    st.write(msg["message"])
+                    st.caption(f"{msg['sender']} • {msg['created_at'][:16]}")
 
+    # Send message
     if prompt := st.chat_input(f"Message {other_users[selected_recipient]}..."):
         try:
             supabase.table("messages").insert({
@@ -107,6 +111,10 @@ def chat():
             st.rerun()
         except Exception as e:
             st.error(f"Failed to send message: {e}")
+
+    # ✅ Auto-refresh every 3 seconds to get new incoming messages
+    time.sleep(3)
+    st.rerun()
 
 if not st.session_state.logged_in:
     login()
