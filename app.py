@@ -1,78 +1,138 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
-import pandas as pd
+from supabase import create_client, Client
 from datetime import datetime
 
 # --- CONFIG ---
 st.set_page_config(page_title="Private Secure Chat", page_icon="🔒")
 
-# Create connection to Google Sheets
-# You will add your Sheet URL in the Streamlit Dashboard "Secrets" later
-conn = st.connection("gsheets", type=GSheetsConnection)
+# --- SUPABASE CONNECTION ---
+@st.cache_resource
+def init_supabase():
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
 
-# --- LOGIN LOGIC ---
+supabase = init_supabase()
+
+# --- SESSION STATE ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.user_email = ""
+    st.session_state.user_name = ""
 
+# --- LOGIN ---
 def login():
-    # DIRECT CSV READ (Bypasses many 302 redirect issues)
-    sheet_id = "1XMJASMYZ9ACVc4G5QZEie7W5Zu0KNpXlQNOVXIbPkcg"
-    # We target the 'Users' tab specifically by name
-    users_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=Users"
-    
-    try:
-        users_df = pd.read_csv(users_url)
-    except Exception as e:
-        st.error("Connection Error: Make sure your Google Sheet is set to 'Anyone with the link' can View.")
-        return
-
-    st.title("Login to Private Chat")
+    st.title("🔒 Private Secure Chat")
     email = st.text_input("Email")
     pwd = st.text_input("Password", type="password")
-    
-    if st.button("Login"):
-        # Make sure column names match your sheet exactly (email, password)
-        user_match = users_df[(users_df['email'] == email) & (users_df['password'].astype(str) == str(pwd))]
-        
-        if not user_match.empty:
-            st.session_state.logged_in = True
-            st.session_state.user_email = email
-            st.session_state.user_name = user_match.iloc[0]['name']
-            st.rerun()
-        else:
-            st.error("Invalid Email or Password. Check your Google Sheet!")
 
-# --- CHAT INTERFACE ---
-if not st.session_state.logged_in:
-    login()
-else:
+    if st.button("Login"):
+        try:
+            result = supabase.table("users") \
+                .select("*") \
+                .eq("email", email) \
+                .eq("password", pwd) \
+                .execute()
+
+            if result.data:
+                user = result.data[0]
+                st.session_state.logged_in = True
+                st.session_state.user_email = email
+                st.session_state.user_name = user['name']
+                st.rerun()
+            else:
+                st.error("Invalid Email or Password.")
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+# --- CHAT ---
+def chat():
+    # Load all other users for dropdown
+    try:
+        users_result = supabase.table("users") \
+            .select("email, name") \
+            .neq("email", st.session_state.user_email) \
+            .execute()
+        other_users = {u['email']: u['name'] for u in users_result.data}
+    except Exception:
+        other_users = {}
+
+    # Sidebar
+    st.sidebar.title("💬 Chat")
     st.sidebar.write(f"Logged in as: **{st.session_state.user_name}**")
+
+    if not other_users:
+        st.sidebar.warning("No other users found.")
+        selected_recipient = None
+    else:
+        selected_recipient = st.sidebar.selectbox(
+            "Chat with:",
+            options=list(other_users.keys()),
+            format_func=lambda x: other_users[x]  # Show name, not email
+        )
+
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
+        st.session_state.user_email = ""
+        st.session_state.user_name = ""
         st.rerun()
 
     st.title(f"Welcome, {st.session_state.user_name}! 👋")
 
-    # 1. Read existing chat history from Sheet
-    chat_df = conn.read(worksheet="ChatHistory")
+    if not selected_recipient:
+        st.info("No other users to chat with.")
+        return
 
-    # 2. Display existing messages
-    for idx, row in chat_df.iterrows():
-        with st.chat_message("user" if row['sender'] == st.session_state.user_email else "assistant"):
-            st.write(f"**{row['sender']}**: {row['message']}")
+    st.subheader(f"Conversation with {other_users[selected_recipient]}")
 
-    # 3. Chat Input
-    if prompt := st.chat_input("Write a message..."):
-        # Append to the Google Sheet
-        new_row = pd.DataFrame([{
-            "sender": st.session_state.user_email,
-            "message": prompt,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }])
-        
-        # Update the sheet
-        updated_df = pd.concat([chat_df, new_row], ignore_index=True)
-        conn.update(worksheet="ChatHistory", data=updated_df)
-        
-        st.rerun() # Refresh to show new message
+    # Load messages between the two users
+    try:
+        result = supabase.table("messages") \
+            .select("*") \
+            .or_(
+                f"and(sender.eq.{st.session_state.user_email},recipient.eq.{selected_recipient}),"
+                f"and(sender.eq.{selected_recipient},recipient.eq.{st.session_state.user_email})"
+            ) \
+            .order("created_at", desc=False) \
+            .execute()
+        messages = result.data
+    except Exception as e:
+        st.error(f"Error loading messages: {e}")
+        messages = []
+
+    # Display messages
+    if not messages:
+        st.info("No messages yet. Say hello! 👋")
+    else:
+        for msg in messages:
+            role = "user" if msg['sender'] == st.session_state.user_email else "assistant"
+            with st.chat_message(role):
+                st.write(msg['message'])
+                st.caption(f"{msg['sender']} • {msg['created_at'][:16]}")
+
+    # Send message
+    if prompt := st.chat_input(f"Message {other_users[selected_recipient]}..."):
+        try:
+            supabase.table("messages").insert({
+                "sender": st.session_state.user_email,
+                "recipient": selected_recipient,
+                "message": prompt
+            }).execute()
+            st.rerun()
+        except Exception as e:
+            st.error(f"Failed to send message: {e}")
+
+# --- MAIN ---
+if not st.session_state.logged_in:
+    login()
+else:
+    chat()
+```
+
+---
+
+## Step 6: Install Supabase Package
+
+Add this to your `requirements.txt`:
+```
+supabase
