@@ -1,26 +1,20 @@
 import streamlit as st
-from supabase import create_client, Client
+from supabase import create_client
 from datetime import datetime
 
-# --- CONFIG ---
 st.set_page_config(page_title="Private Secure Chat", page_icon="🔒")
 
-# --- SUPABASE CONNECTION ---
 @st.cache_resource
 def init_supabase():
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
-    return create_client(url, key)
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 supabase = init_supabase()
 
-# --- SESSION STATE ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.user_email = ""
     st.session_state.user_name = ""
 
-# --- LOGIN ---
 def login():
     st.title("🔒 Private Secure Chat")
     email = st.text_input("Email")
@@ -28,36 +22,25 @@ def login():
 
     if st.button("Login"):
         try:
-            result = supabase.table("users") \
-                .select("*") \
-                .eq("email", email) \
-                .eq("password", pwd) \
-                .execute()
-
+            result = supabase.table("users").select("*").eq("email", email).eq("password", pwd).execute()
             if result.data:
                 user = result.data[0]
                 st.session_state.logged_in = True
                 st.session_state.user_email = email
-                st.session_state.user_name = user['name']
+                st.session_state.user_name = user["name"]
                 st.rerun()
             else:
                 st.error("Invalid Email or Password.")
         except Exception as e:
             st.error(f"Error: {e}")
 
-# --- CHAT ---
 def chat():
-    # Load all other users for dropdown
     try:
-        users_result = supabase.table("users") \
-            .select("email, name") \
-            .neq("email", st.session_state.user_email) \
-            .execute()
-        other_users = {u['email']: u['name'] for u in users_result.data}
+        users_result = supabase.table("users").select("email, name").neq("email", st.session_state.user_email).execute()
+        other_users = {u["email"]: u["name"] for u in users_result.data}
     except Exception:
         other_users = {}
 
-    # Sidebar
     st.sidebar.title("💬 Chat")
     st.sidebar.write(f"Logged in as: **{st.session_state.user_name}**")
 
@@ -68,7 +51,7 @@ def chat():
         selected_recipient = st.sidebar.selectbox(
             "Chat with:",
             options=list(other_users.keys()),
-            format_func=lambda x: other_users[x]  # Show name, not email
+            format_func=lambda x: other_users[x]
         )
 
     if st.sidebar.button("Logout"):
@@ -85,32 +68,25 @@ def chat():
 
     st.subheader(f"Conversation with {other_users[selected_recipient]}")
 
-    # Load messages between the two users
     try:
-        result = supabase.table("messages") \
-            .select("*") \
-            .or_(
-                f"and(sender.eq.{st.session_state.user_email},recipient.eq.{selected_recipient}),"
-                f"and(sender.eq.{selected_recipient},recipient.eq.{st.session_state.user_email})"
-            ) \
-            .order("created_at", desc=False) \
-            .execute()
+        result = supabase.table("messages").select("*").or_(
+            f"and(sender.eq.{st.session_state.user_email},recipient.eq.{selected_recipient}),"
+            f"and(sender.eq.{selected_recipient},recipient.eq.{st.session_state.user_email})"
+        ).order("created_at", desc=False).execute()
         messages = result.data
     except Exception as e:
         st.error(f"Error loading messages: {e}")
         messages = []
 
-    # Display messages
     if not messages:
         st.info("No messages yet. Say hello! 👋")
     else:
         for msg in messages:
-            role = "user" if msg['sender'] == st.session_state.user_email else "assistant"
+            role = "user" if msg["sender"] == st.session_state.user_email else "assistant"
             with st.chat_message(role):
-                st.write(msg['message'])
+                st.write(msg["message"])
                 st.caption(f"{msg['sender']} • {msg['created_at'][:16]}")
 
-    # Send message
     if prompt := st.chat_input(f"Message {other_users[selected_recipient]}..."):
         try:
             supabase.table("messages").insert({
@@ -122,17 +98,7 @@ def chat():
         except Exception as e:
             st.error(f"Failed to send message: {e}")
 
-# --- MAIN ---
 if not st.session_state.logged_in:
     login()
 else:
     chat()
-```
-
----
-
-## Step 6: Install Supabase Package
-
-Add this to your `requirements.txt`:
-```
-supabase
