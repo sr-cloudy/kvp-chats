@@ -16,15 +16,23 @@ if "logged_in" not in st.session_state:
     st.session_state.user_email = ""
 
 def login():
-    # Read the Users tab from your sheet
-    users_df = conn.read(worksheet="Users")
+    # DIRECT CSV READ (Bypasses many 302 redirect issues)
+    sheet_id = "1XMJASMYZ9ACVc4G5QZEie7W5Zu0KNpXlQNOVXIbPkcg"
+    # We target the 'Users' tab specifically by name
+    users_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=Users"
     
+    try:
+        users_df = pd.read_csv(users_url)
+    except Exception as e:
+        st.error("Connection Error: Make sure your Google Sheet is set to 'Anyone with the link' can View.")
+        return
+
     st.title("Login to Private Chat")
     email = st.text_input("Email")
     pwd = st.text_input("Password", type="password")
     
     if st.button("Login"):
-        # Check if email and password match any row in the Users tab
+        # Make sure column names match your sheet exactly (email, password)
         user_match = users_df[(users_df['email'] == email) & (users_df['password'].astype(str) == str(pwd))]
         
         if not user_match.empty:
@@ -33,7 +41,7 @@ def login():
             st.session_state.user_name = user_match.iloc[0]['name']
             st.rerun()
         else:
-            st.error("Invalid Email or Password. Ask the Admin to add you.")
+            st.error("Invalid Email or Password. Check your Google Sheet!")
 
 # --- CHAT INTERFACE ---
 if not st.session_state.logged_in:
