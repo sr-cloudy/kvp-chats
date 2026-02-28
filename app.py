@@ -233,6 +233,79 @@ hr {
     border-radius: 10px !important;
     font-family: 'DM Sans', sans-serif !important;
 }
+
+/* ── Chat bubbles ── */
+.chat-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 1rem 0 1.5rem;
+}
+
+.bubble-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.bubble-row.me {
+    flex-direction: row-reverse;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+}
+
+.avatar.me-av   { background: #1a1a1a; color: #fff; }
+.avatar.them-av { background: #e0e0d8; color: #1a1a1a; }
+
+.bubble {
+    max-width: 68%;
+    padding: 0.6rem 1rem;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    word-break: break-word;
+    color: #1a1a1a !important;
+}
+
+.bubble.me {
+    background: #1a1a1a;
+    color: #ffffff !important;
+    border-bottom-right-radius: 4px;
+}
+
+.bubble.them {
+    background: #ffffff;
+    border: 1.5px solid #e0e0d8;
+    border-bottom-left-radius: 4px;
+}
+
+.bubble-time {
+    font-size: 0.7rem;
+    color: #bbb !important;
+    margin-top: 2px;
+    padding: 0 4px;
+}
+
+.time-me   { text-align: right; }
+.time-them { text-align: left; }
+
+.msg-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -266,6 +339,54 @@ def get_online_emails(threshold_seconds: int = 15) -> set:
         return online
     except Exception:
         return set()
+
+
+def initials(name: str) -> str:
+    parts = name.strip().split()
+    if len(parts) >= 2:
+        return (parts[0][0] + parts[-1][0]).upper()
+    return name[:2].upper() if name else "?"
+
+
+def render_messages_html(messages, my_email, my_name, recipient_name):
+    """Render all messages as clean custom HTML bubbles."""
+    if not messages:
+        return ""
+
+    import html as htmllib
+
+    rows = []
+    for msg in messages:
+        is_me = msg["sender"] == my_email
+        text  = htmllib.escape(msg["message"])
+        name  = my_name if is_me else recipient_name
+        av_cls    = "me-av" if is_me else "them-av"
+        bub_cls   = "me"    if is_me else "them"
+        row_cls   = "me"    if is_me else ""
+        time_cls  = "time-me" if is_me else "time-them"
+
+        try:
+            ts  = datetime.fromisoformat(msg["created_at"].replace("Z", "+00:00"))
+            ts_label = ts.strftime("%-I:%M %p")
+        except Exception:
+            ts_label = ""
+
+        av_html = f'<div class="avatar {av_cls}">{initials(name)}</div>'
+        bub_html = f'''
+        <div class="msg-group">
+          <div class="bubble {bub_cls}">{text}</div>
+          <div class="bubble-time {time_cls}">{ts_label}</div>
+        </div>'''
+
+        if is_me:
+            row = f'<div class="bubble-row {row_cls}">{av_html}{bub_html}</div>'
+        else:
+            row = f'<div class="bubble-row {row_cls}">{av_html}{bub_html}</div>'
+
+        rows.append(row)
+
+    inner = "\n".join(rows)
+    return f'<div class="chat-area">{inner}</div>'
 
 
 def status_dot(is_online: bool) -> str:
@@ -406,10 +527,13 @@ def chat():
             unsafe_allow_html=True
         )
     else:
-        for msg in messages:
-            role = "user" if msg["sender"] == st.session_state.user_email else "assistant"
-            with st.chat_message(role):
-                st.write(msg["message"])
+        html = render_messages_html(
+            messages,
+            st.session_state.user_email,
+            st.session_state.user_name,
+            recipient_name
+        )
+        st.markdown(html, unsafe_allow_html=True)
 
     # Send message
     if prompt := st.chat_input(f"Message {recipient_name}..."):
